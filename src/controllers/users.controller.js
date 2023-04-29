@@ -33,7 +33,9 @@ async function login(req, res) {
     await db.sessions.insertOne({ token: sessionToken, userId: user._id });
   }
 
-  res.send(sessionToken);
+  delete user.password;
+
+  res.send({ ...user, token: sessionToken });
 }
 
 async function logout(_req, res) {
