@@ -17,5 +17,6 @@ const db = client.db();
 
 const users = db.collection("users");
 const sessions = db.collection("sessions");
+const products = db.collection("products");
 
-export default { users, sessions };
+export default { users, sessions , products };
