@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import db from "../database/database.connection.js";
 import sgMail from "@sendgrid/mail";
 
@@ -23,7 +24,7 @@ async function deleteProducts (req, res) {
     const { name } = req.body;
     try {        
         await db.products.deleteMany({name: name});
-        res.status(200);
+        res.sendStatus(200);
     } catch (err) {
         return res.status(500).send(err.message);
     }
@@ -50,4 +51,41 @@ async function sendEmailNewsletter(req, res){
     }
 }
 
-export default { newProduct, getProducts, deleteProducts, sendEmailNewsletter };
+async function addWishlistProducts(req, res){
+    const {idUsuario, idProduto} = req.body;
+
+    const userProducts = await db.wishlist.findOne({idUsuario: idUsuario});
+    const product = await db.products.findOne({_id: new ObjectId(idProduto)})
+
+    if (!userProducts){
+        await db.wishlist.insertOne({idUsuario: idUsuario, products: [product]});
+    }else{
+        const filter = {idUsuario: idUsuario};
+        const update = {$set: {products: [...userProducts.products, product]}};
+
+        await db.wishlist.updateOne(filter, update);
+        res.sendStatus(200);
+    }
+}
+
+async function delWishlistProducts(req, res){
+    const {idUsuario, idProduto} = req.body;
+
+    const userProducts = await db.wishlist.findOne({idUsuario: idUsuario});
+    const newProducts = userProducts.products.filter((prod) => prod !== null && prod._id != idProduto);
+
+    const filter = {idUsuario: idUsuario};
+    const update = {$set: {products: newProducts}};
+
+    await db.wishlist.updateOne(filter, update);
+    res.sendStatus(200);
+}
+
+async function getWishlistProducts(req, res){
+    const id = req.params.id;
+
+    const products = await db.wishlist.findOne({idUsuario: id});
+    res.status(200).send(products);
+}
+
+export default { newProduct, getProducts, deleteProducts, sendEmailNewsletter, getWishlistProducts, addWishlistProducts, delWishlistProducts };
